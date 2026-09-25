@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+/target
+**/*.rs.bk
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+/src-tauri/target
+.DS_Store
+*.log
