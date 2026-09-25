@@ -119,7 +119,17 @@ La part on més s'equivoquen les implementacions, i la que fa que la botifarra s
 
 > **Conseqüència de disseny:** aquestes obligacions **eliminen gairebé tot el faroleig**. La botifarra no és pòquer. L'«engany» hi existeix però és **legal i indirecte**: està en quina carta tries quan en tens diverses de vàlides, i en el que això diu o amaga. La §5.3 hi torna, perquè és el nucli del que cal ensenyar.
 
-### 1.8 Variants configurables per taula
+### 1.8 Reglament de referència
+
+**Font de veritat: el reglament oficial del Campionat de Catalunya de Botifarra.** És el mateix que diu seguir la competència directa —l'app de Piqture anuncia «regles oficials»— i és el que fan servir els casals i les colles que seran els primers clients.
+
+**Per què aquest i no un altre:** quan un jugador de casal discuteixi una jugada, la resposta ha de ser «el reglament del campionat diu això», no «nosaltres ho hem interpretat així». **Discutir el reglament amb un client és una discussió que no es guanya.**
+
+La transcripció en línia que fa servir la comunitat és la publicada a **butinet.cat**, i serveix com a referència accessible per a l'equip.
+
+> **Regla d'implementació:** cada prova del mòdul `rules` porta al comentari **l'article concret** del reglament que verifica. Quan algú qüestioni una jugada, s'ha de poder anar de la queixa a la prova en trenta segons.
+
+### 1.9 Variants configurables per taula
 
 | Variant | Opcions | Per defecte |
 |---|---|---|
@@ -1024,7 +1034,7 @@ Cua de denúncies amb **reproducció completa de la partida** · sancions gradua
 | # | Decisió | Bloqueja |
 |---|---|---|
 | 1 | **Nom i domini.** Comprovar `manilla.cat` / `.app` i cerca de marca | La identitat visual |
-| 2 | **Reglament de referència.** Triar-ne un de públic i concret com a font de veritat per a les variants, i citar-lo | Les proves de la F0 |
+| 2 | ~~Reglament de referència~~ → **decidit: el del Campionat de Catalunya de Botifarra**, el mateix «reglament oficial» que diu seguir la competència directa. Transcripció en línia de referència: el reglament publicat a butinet.cat | — |
 | 3 | ~~Android: Tauri o Kotlin~~ → **decidit: Kotlin natiu amb UniFFI** (§3.5) | — |
 | 4 | **Il·lustració de la baralla.** Encàrrec propi, cal pressupostar-lo | El disseny |
 | 5 | **Compra única al costat de la subscripció** (§11) | El llançament comercial |
