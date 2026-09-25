@@ -8,10 +8,11 @@
 | **Nom comercial** | `Manilla` — **provisional**, pendent de comprovar domini i marca (§2) |
 | **Territori** | Catalunya · País Valencià · Balears · Catalunya Nord · **Andorra** · catalans a fora |
 | **Idiomes** | Català primer · castellà · francès · anglès |
-| **Plataformes** | **Web + PWA + Android** des del disseny inicial. iOS a la fase 7 |
+| **Plataformes** | **1r Web + PWA · 2n Android · 3r Windows.** iOS més endavant |
 | **Backend** | Rust |
 | **Nucli de joc i IA** | Rust, compilat a tres destins |
-| **Versió** | 1.1 · 25 de setembre del 2026 |
+| **Servidor de proves** | Hetzner propi (Ryzen 5 3600 · 62 GB RAM · sense GPU útil) |
+| **Versió** | 1.2 · 25 de setembre del 2026 |
 
 ---
 
@@ -216,7 +217,9 @@ core/
 | Web i PWA | **Vite · React 19 · TypeScript estricte** | SPA darrere d'autenticació: **no cal Next.js**, i Tauri vol sortida estàtica |
 | Animació | **Motion** | Les cartes s'han de moure bé: és mitja sensació del producte |
 | Estils | **Tailwind 4** amb els tokens de la §9 | |
-| Android | **Tauri 2** | Reaprofita frontend i nucli Rust |
+| Android | **Kotlin + Jetpack Compose** amb el nucli Rust via **UniFFI** | Rendiment natiu on el públic té mòbils modestos (§3.5) |
+| Windows | **Tauri 2** | Reaprofita el frontend web; **l'escriptori és el camí madur** de Tauri |
+| Model de llenguatge | **Salamandra 7B-instruct** (BSC) al servidor propi | §5.6 |
 | Veu | **LiveKit** (§8.4) | WebRTC gestionat, fase tardana |
 
 > **Per què Vite i no Next.js:** no hi ha res a renderitzar al servidor —tot passa darrere d'autenticació i en temps real— i Tauri necessita sortida estàtica. Next.js hi afegiria complexitat sense donar res. **Decisió conscient, diferent de la dels altres projectes del Marcel.**
@@ -227,13 +230,38 @@ La web **és** la PWA: instal·lable, amb icona, pantalla completa i **joc contr
 
 **Per a molts usuaris la PWA serà suficient i no caldrà que instal·lin res d'una botiga.** L'app d'Android és per a qui vol presència a la botiga i notificacions natives.
 
-### 3.5 Android — camí i alternativa
+### 3.5 Android — decisió presa: Kotlin natiu
 
-**Camí recomanat: Tauri 2.** Estable des de l'octubre del 2024, versió 2.10.1 el març del 2026, amb aplicacions en producció. Una sola base de codi per a web i mòbil amb el nucli Rust a dins.
+**Android es fa en Kotlin amb Jetpack Compose, i el nucli Rust s'hi enllaça via UniFFI.** No amb Tauri.
 
-**El matís honest:** el suport mòbil de Tauri és **més nou que el d'escriptori**.
+**Per què, i és una decisió de risc, no de comoditat:**
 
-> **Porta de decisió a la F3:** compilar una pantalla real per a Android i provar-la en **tres mòbils de gamma mitjana i baixa**. Si les animacions o la mida del binari no compleixen, **el pla alternatiu és Kotlin natiu amb el nucli Rust via UniFFI**, reaprofitant el 100% de la lògica i reescrivint només la interfície. **No es pot ajornar a la fase final.**
+| Motiu | |
+|---|---|
+| **El públic** | Aquest joc el juga gent gran amb **mòbils de gamma mitjana i baixa**. És exactament on una WebView pateix amb animacions contínues de cartes, i on una interfície nativa guanya de carrer |
+| **Maduresa** | El suport mòbil de Tauri és **la part més nova** del framework. L'escriptori fa anys que va; el mòbil, no |
+| **Dependència de plataforma** | Amb WebView depens dels canvis de la WebView d'Android i de les polítiques de Google sobre aplicacions embolcallades. Amb Kotlin, no |
+| **Futur** | Widgets, notificacions, integració amb el sistema, rendiment: tot és més senzill i més estable en natiu |
+
+**El que es comparteix igualment:** **tota la lògica.** Regles, comptatge, variants i **la IA sencera** viuen a `botifarra-core` en Rust i es compilen per a Android via UniFFI, que genera els lligams de Kotlin automàticament. **La part difícil no es reescriu mai.**
+
+**El que costa:** la interfície d'Android s'escriu una segona vegada en Compose. És un cost real i s'assumeix conscientment. A canvi:
+
+- **Desapareix la porta de decisió de la F3.** La incertesa que hi havia al pla ja no hi és.
+- La interfície d'Android pot ser **més simple** que la web: menys pantalles de gestió, més joc.
+- Compose i React s'assemblen prou perquè el disseny de la §9 es tradueixi gairebé directament.
+
+> **Windows sí amb Tauri.** Allà l'argument s'inverteix: l'escriptori és el camí madur del framework, el públic juga en una pantalla gran sense restriccions de rendiment, i **reaprofita el frontend web sencer**. És una setmana de feina, no un projecte.
+
+**Resum de l'arquitectura per plataforma:**
+
+```
+botifarra-core (Rust)  ────┬──→  WASM      →  Web i PWA (React)
+   regles + IA            ├──→  UniFFI    →  Android (Kotlin + Compose)
+   escrit UNA vegada      ├──→  natiu     →  Windows (Tauri, frontend web)
+                          └──→  natiu     →  Servidor (Axum)
+```
+
 
 ---
 
@@ -356,6 +384,59 @@ Aquí viu «estratègies, tècniques i enganys», i cal precisió perquè **en b
 ### 5.5 Cost
 
 L'anàlisi del motor és local i gratuïta. El model de llenguatge només s'invoca **per a jugades ja marcades com a error**, en lot i de manera asíncrona: **2–4 crides per partida, menys d'1 cèntim**. Només l'assumeixen els comptes de pagament.
+
+### 5.6 Quin model, i quant costa
+
+> **La pregunta important té una resposta que sorprèn: la part caríssima d'una IA de cartes aquí és gratis.**
+> El motor que juga (§4) és **cerca, no model**: no crida cap API, no costa ni un cèntim i corre al dispositiu de l'usuari. L'única despesa possible és **escriure les explicacions**, i és una tasca petita.
+
+**Per què la tasca és petita.** El model **no analitza la partida** —això ja ho ha fet el motor— sinó que rep una taula de números i escriu dues frases en català. És generació restringida, no raonament. Per tant no cal un model gran.
+
+| | Entrada | Sortida |
+|---|---|---|
+| Per explicació | ~800 tokens (context de la mà + alternatives avaluades) | ~80 tokens |
+| Per partida | 2–4 explicacions | |
+
+#### Recomanació: model propi al teu servidor Hetzner
+
+**`Salamandra 7B-instruct`**, del Barcelona Supercomputing Center.
+
+| Motiu | |
+|---|---|
+| **Fet per al català** | Família de models per a llengües europees on **el català s'ha sobremostrat ×2**. La variant *instruct* s'ha entrenat amb 276.000 instruccions en anglès, castellà i **català** |
+| **Llicència Apache 2.0** | Ús comercial permès sense condicions |
+| **Hi cap de sobres** | Quantitzat a `Q4_K_M` ocupa ~4,5 GB i en demana 5–6 de RAM. **En tens 55 de lliures** |
+| **Cost marginal: zero** | Cap crida externa, cap factura per explicació |
+| **Les mans no surten del teu servidor** | Argument real de privadesa i un cost operatiu menys |
+
+**Rendiment esperat al teu Ryzen 5 3600 amb `llama.cpp`:** un model de 7B a `Q4_K_M` es mou entre **5 i 9 tokens per segon** en CPU d'aquesta generació. Una explicació de 80 tokens són **10–16 segons**.
+
+> **Això és perfectament acceptable perquè la tasca és asíncrona.** L'explicació es genera **després de la mà**, en segon pla i en lot. L'usuari no espera mai: quan obre la revisió, ja hi és. **Si la generació fos síncrona, aquesta decisió seria equivocada.**
+
+**Variant més ràpida:** `Salamandra 2B-instruct` va unes tres vegades més de pressa (3–5 segons per explicació). Com que la feina és escriure dues frases amb els números donats, **és molt probable que n'hi hagi prou**.
+
+**Regla: començar pel 2B i pujar al 7B només si la validació de la §15 falla.** No al revés.
+
+#### Sortida de seguretat
+
+Tot darrere d'un `trait ExplainProvider`, igual que el nucli. Canviar de model o passar a una API és **una línia de configuració**, no una reescriptura.
+
+```toml
+[explain]
+provider = "local"              # local | gemini | openai
+model    = "salamandra-2b-instruct-q4_k_m"
+endpoint = "http://127.0.0.1:8080"
+max_tokens = 120
+timeout_s  = 45
+```
+
+**Si algun dia cal API** —perquè la qualitat no arriba o perquè el volum supera el servidor— l'opció barata és un model de gamma *flash*: amb ~800 tokens d'entrada i 80 de sortida, l'explicació surt **per sota d'un cèntim de cèntim**, i una partida sencera per unes **dues centèsimes de cèntim**. És a dir: **ni tan sols llavors el cost és un problema.** La raó per triar el model propi no és el preu, és no dependre de ningú i que les dades no surtin.
+
+#### El que el model NO pot fer, mai
+
+- **No tria cartes.** Ni en el joc ni a l'anàlisi.
+- **No decideix què va estar malament.** Això ho diu el motor amb números (§5.1).
+- **No inventa probabilitats.** Totes les xifres del text venen del motor i es validen abans de mostrar-les: si el text conté un número que no és a la taula d'entrada, **l'explicació es descarta**.
 
 ---
 
@@ -701,17 +782,199 @@ El problema real d'un joc per parelles és **la confabulació**: dos jugadors pa
 
 ---
 
-## 14. Fases
+## 14. Onboarding i tutorial
+
+> **El buit més gran que tenia aquest document.** La botifarra té una regla que sorprèn tothom que ve d'altres jocs de baralla espanyola: **el 9 mana per sobre de l'as**. I les obligacions de servir, matar i fallar són estrictes. Un jugador nou que no ho sap **fa tres jugades il·legals seguides i se'n va**.
+
+### 14.1 Tres portes d'entrada
+
+| Perfil | Què necessita |
+|---|---|
+| **Ja sap jugar** | Res. Botó «Sé jugar» i a taula. **No se'l pot obligar a fer cap tutorial** |
+| **Ha jugat alguna vegada** | Un recordatori de 60 segons: jerarquia amb la manilla, valors, multiplicadors |
+| **No hi ha jugat mai** | Tutorial guiat de 5 mans preparades |
+
+### 14.2 El tutorial
+
+Cinc mans **preparades**, no aleatòries, cadascuna amb un objectiu:
+
+1. **La manilla mana.** Una mà on l'as perd contra el 9 i es veu.
+2. **Servir el pal.** Les cartes il·legals estan atenuades i s'explica per què.
+3. **Matar i fallar.** Quan hi estàs obligat i quan no, perquè el company va guanyant.
+4. **Comptar.** Es fa el recompte a la vista, carta a carta, fins als 72.
+5. **Cantar i contrar.** Què canta cadascú amb aquesta mà i per què.
+
+**El tutorial fa servir el motor d'anàlisi**, no textos fixos: quan el jugador s'equivoca, l'explicació surt del mateix lloc que la de les partides reals. **Cost de construcció gairebé nul, i coherència total.**
+
+### 14.3 Ajuda permanent
+
+- **Les jugades il·legals no es poden tocar** (§9.5) i, si s'intenten, apareix el motiu en una línia: «has de servir espases».
+- **Taula de valors sempre accessible** amb un toc, sense sortir de la partida.
+- **Mode principiant**: es marca visualment quina és la carta més alta sobre la taula. Desactivat per defecte i **desactivat sempre en partides classificades**.
+
+---
+
+## 15. So
+
+**Mitja sensació d'un joc de cartes és el so**, i no hi era en aquest document.
+
+| So | Quan |
+|---|---|
+| Repartir | Inici de mà, seqüència curta |
+| Deixar carta | Cada jugada, amb variació lleu per no cansar |
+| Recollir basa | Arrossegament cap al guanyador |
+| El teu torn | Discret, i **només si l'aplicació no és en primer pla o fa estona que no jugues** |
+| Cantar | Un to per pal, un altre per botifarra |
+| Contro | Marcat, és el moment de tensió |
+| Final de mà | Segons qui guanya |
+
+**Regles:** tot en **menys de 300 ms** · silenci per defecte al mòbil **la primera vegada** · commutador sempre visible · **cap música de fons** (aquest públic la desactiva i molesta al casal) · so i vibració independents.
+
+---
+
+## 16. Legal
+
+### 16.1 Joc d'atzar — la comprovació que cal fer abans de llançar
+
+**La botifarra amb rànquing, lligues i tornejos no és joc d'atzar si no hi ha premi econòmic ni aposta.** El document ho fixa com a requisit dur:
+
+- **Cap premi en diners ni convertible en diners**, en cap mode, ni en tornejos de club.
+- **Cap aposta entre jugadors**, ni funcionalitat que la faciliti.
+- **Cap moneda virtual comprable** que es pugui guanyar jugant.
+- La subscripció paga **funcions**, mai avantatge competitiu ni accés a premis.
+
+> ⚠️ Si algun dia es vol fer un torneig amb premi —encara que sigui una panera d'un patrocinador— **cal consultar-ho abans amb un advocat**, perquè creua la línia cap a normativa de joc a Espanya i a Andorra. **És el canvi de producte més perillós que es pot fer sense adonar-se'n.**
+
+### 16.2 La baralla
+
+**Els dissenys tradicionals de la baralla espanyola són de domini públic, però les edicions modernes concretes de cada fabricant estan protegides.** No es pot escanejar ni redibuixar de prop cap baralla comercial.
+
+**Requisit: il·lustració original encarregada**, amb cessió de drets per escrit per a ús comercial, digital i imprès. És a les decisions obertes i cal pressupostar-ho.
+
+### 16.3 Dades
+
+Societat andorrana venent a la UE: **LQPD andorrana i RGPD europeu**. Condicions i política de privacitat acceptades explícitament · esborrat de compte real amb finestra de gràcia · exportació de dades · mínim necessari (àlies i correu; **cap dada que no calgui**) · les partides es conserven per a l'historial i el BR, i es purguen amb el compte.
+
+**Menors:** no es demana l'edat i no es fa perfilat. Si s'afegeix xat de veu, **cal repensar-ho** perquè canvia el risc.
+
+### 16.4 Botigues
+
+Google Play: classificació per edat, declaració de dades, política de privacitat, i **declarar que no hi ha joc d'atzar**. La subscripció dins de l'app obliga a facturació de Google amb la seva comissió; **per això la subscripció es ven al web** (§11) i l'app només la reconeix.
+
+---
+
+## 17. Infraestructura i desplegament
+
+### 17.1 Ordre de plataformes
+
+**1r Web i PWA · 2n Android · 3r Windows.** Decisió del promotor i és la correcta:
+
+| Ordre | Per què |
+|---|---|
+| **1. Web + PWA** | Zero fricció per provar, cap botiga que aprovi res, desplegament en segons. **És on es valida si el producte funciona** |
+| **2. Android** | On és el públic. **Kotlin natiu** (§3.5): més feina, menys risc de futur |
+| **3. Windows** | **Gairebé gratis amb Tauri**: reaprofita el frontend web i l'escriptori és el camí madur del framework. Públic que juga a casa amb pantalla gran |
+
+### 17.2 Servidor de proves: el Hetzner que ja tens
+
+Per a les fases F0 a F4 **no cal contractar res**. El teu Hetzner (Ryzen 5 3600, 62 GB de RAM) fa de sobres per a:
+
+| Ús | Consum |
+|---|---|
+| Servidor de joc | Mínim. Una partida són 4 connexions i uns quants missatges per minut |
+| PostgreSQL | Mínim en aquesta fase |
+| **Model d'explicacions** | ~5 GB de RAM (§5.6), en lot i fora d'hores |
+| Compilació i proves | El torneig intern de la §4.8 aprofita els 12 fils |
+
+> ⚠️ **Dues condicions abans de posar-hi res** (heretades de l'auditoria del 22 de setembre):
+> 1. **Comprovar l'espai lliure.** Aquest servidor ja allotja webs de clients en producció.
+> 2. **Aïllar-ho en contenidors amb límits de memòria i CPU.** El torneig intern de la IA pot consumir els 12 fils durant hores; **no pot afectar les webs que ja hi corren**.
+
+**Quan calgui sortir-ne:** el dia que hi hagi multijugador públic obert, el joc passa a una màquina pròpia. El senyal és l'ús sostingut de CPU o qualsevol degradació de les webs existents, **no una data**.
+
+### 17.3 Desplegament
+
+| Peça | Elecció |
+|---|---|
+| Contenidors | Docker Compose: `game` (Axum), `db`, `explain` (llama.cpp), `caddy` |
+| Proxy i TLS | Caddy amb certificats automàtics |
+| Base de dades | PostgreSQL 16 · **còpia diària fora del servidor** i prova de restauració mensual |
+| Estàtics i PWA | Servits per Caddy; més endavant CDN |
+| CI | GitHub Actions: `fmt`, `clippy -D warnings`, `test`, `wasm-pack build`, `tsc --noEmit`, i **el torneig de la IA com a prova de no-regressió** |
+| Traces | `tracing` en JSON |
+| Errors | Sentry al servidor i al client |
+| Vigilància | Disponibilitat externa · alerta si una partida queda encallada · alerta si la cua d'explicacions creix |
+
+**Variables d'entorn** (cap valor al repositori):
+
+```
+DATABASE_URL, APP_BASE_URL, SESSION_COOKIE_DOMAIN
+EXPLAIN_PROVIDER, EXPLAIN_ENDPOINT, EXPLAIN_MODEL
+SMTP_URL, MAIL_FROM
+FREEMIUS_PUBLIC_KEY, FREEMIUS_SECRET_KEY
+LIVEKIT_URL, LIVEKIT_API_KEY, LIVEKIT_SECRET      # fase tardana
+SENTRY_DSN, ADMIN_ALERT_EMAIL
+```
+
+### 17.4 Pressupost de rendiment
+
+| Peça | Límit |
+|---|---|
+| **Nucli en WASM** | **< 400 KB** comprimit. És el que decideix si la PWA arrenca de pressa amb 3G |
+| Paquet inicial de la web | < 250 KB comprimit sense el WASM |
+| LCP amb 4G | < 2,5 s |
+| Memòria a l'Android | < 250 MB en partida |
+| Binari d'Android | < 30 MB · **60 fps sostinguts en gamma baixa** |
+
+> Si el nucli en WASM se'n va de mida, **es compila una versió reduïda per al client** (regles i validació) i la IA forta es queda al servidor. **Cal mesurar-ho a la F2, no al final.**
+
+---
+
+## 18. Idiomes
+
+**Català primer**, i no com a traducció: és la llengua en què es va escriure el producte. Després castellà, francès (Catalunya Nord) i anglès.
+
+- **Cap cadena a codi** des del primer dia. Tot a fitxers de missatges.
+- **La terminologia del joc no es tradueix**: *manilla*, *botifarra*, *contro*, *recontro*, *Sant Vicenç*, *arrossegar*, *fallar*. Són els noms del joc i un jugador castellanoparlant de Lleida també els diu així. **Traduir-los seria un error de producte, no d'idioma.**
+- **Les explicacions de la IA es generen en la llengua de l'usuari**, no es tradueixen després. El model ho fa directament (§5.6).
+- Formats de data i nombre localitzats; el marcador sempre amb xifres tabulars.
+
+---
+
+## 19. Mètriques i moderació
+
+### 19.1 Les set xifres que importen
+
+| Mètrica | Per què |
+|---|---|
+| **Temps fins a la primera partida** | Si passa d'un minut, hi ha fricció a matar |
+| **Partides per usuari i setmana** | El senyal d'hàbit, el més important de tots |
+| **Retenció al dia 7 i al 30** | |
+| **% de partides acabades** | Un abandonament alt vol dir que el relleu d'IA no funciona |
+| **% d'usuaris que obren la revisió** | **Aquesta és la mètrica del producte.** Si ningú obre l'anàlisi, el diferenciador no existeix |
+| **Errors per partida, per jugador** | Ha de baixar amb el temps. **És la prova que el producte ensenya** |
+| **Conversió a pagament** | Segmentada per qui fa servir l'anàlisi i qui no |
+
+**Analítica pròpia i sense seguidors de tercers.** El públic de Piqture valora explícitament que no hi hagi seguiment, i aquí hi ha una oportunitat de coherència.
+
+### 19.2 Moderació
+
+Cua de denúncies amb **reproducció completa de la partida** · sancions graduals (silenci, suspensió, bloqueig) · registre d'auditoria de tota acció administrativa · revisió de les alertes de confabulació (§13.4).
+
+---
+
+## 20. Fases
 
 | Fase | Setmanes | Contingut | Criteri de sortida |
 |---|---|---|---|
 | **F0 — Nucli** | 1–3 | Regles, repartiment, bases, comptatge, variants. **Sense interfície** | Les proves cobreixen **totes** les obligacions de la §1.7 i **tots** els multiplicadors |
 | **F1 — IA** | 3–7 | ISMCTS, deducció, senyals, estils, nivells, política de cantar | Campió guanya **>65%** contra un comptador de cartes |
 | **F2 — Web i PWA local** | 7–10 | Interfície, animacions, joc contra la màquina amb WASM, instal·lable i sense connexió | Una partida sencera contra bots, offline, al mòbil |
-| **F3 — Multijugador** | 10–14 | Servidor, sales, reconnexió, **relleu d'IA (§6.2)**. **Porta de decisió d'Android (§3.5)** | 4 persones juguen a 101 amb una caiguda de xarxa provocada, i el relleu funciona |
+| **F3 — Multijugador** | 10–14 | Servidor, sales, reconnexió, **relleu d'IA (§6.2)** | 4 persones juguen a 101 amb una caiguda de xarxa provocada, i el relleu funciona |
 | **F4 — L'anàlisi** | 14–18 | Motor d'anàlisi, explicacions, repeticions, «per què l'IA», «El meu joc» | **10 jugadors de casal diuen que l'explicació és correcta i útil** |
 | **F5 — Competició** | 18–21 | BR amb component de qualitat, categories, lligues, tornejos, assoliments, reptes | Una lliga completa d'un club, acabada |
-| **F6 — Android** | 21–24 | Empaquetat, proves en dispositius reals, publicació | A Google Play, funcionant en gamma baixa |
+| **F6 — Android** | 21–27 | **Kotlin + Compose**, nucli via UniFFI, proves en dispositius reals, publicació | A Google Play, **60 fps en un mòbil de gamma baixa** |
+| **F6b — Windows** | 27–28 | Tauri 2 amb el frontend web | Instal·lable. **1 setmana**: reaprofita tot |
 | **F7 — Social avançat** | 24+ | Espectador, retransmissió, clans, **veu**, iOS | — |
 
 > **F4 no es pot avançar ni retallar.** És l'única part que la competència no té i l'única raó per la qual algú canviaria d'aplicació. **Si el pressupost s'escurça, es retalla F7, mai F4.**
@@ -720,7 +983,7 @@ El problema real d'un joc per parelles és **la confabulació**: dos jugadors pa
 
 ---
 
-## 15. Criteris d'acceptació
+## 21. Criteris d'acceptació
 
 **Joc**
 - [ ] Cap jugada il·legal és possible des de cap client, ni modificat.
@@ -747,7 +1010,8 @@ El problema real d'un joc per parelles és **la confabulació**: dos jugadors pa
 - [ ] L'espectador en directe té 30 s de retard i no veu cap mà.
 
 **Tècnics**
-- [ ] El mateix nucli corre al servidor, al navegador i a Android.
+- [ ] El mateix nucli corre al servidor, al navegador, a Android (UniFFI) i a Windows.
+- [ ] L'app d'Android manté **60 fps** durant les animacions en un mòbil de gamma baixa.
 - [ ] La PWA és instal·lable i juga contra la màquina sense connexió.
 - [ ] Un reinici del servidor no perd cap partida.
 - [ ] Jugable amb 3G i en un mòbil de fa cinc anys.
@@ -755,13 +1019,13 @@ El problema real d'un joc per parelles és **la confabulació**: dos jugadors pa
 
 ---
 
-## 16. Decisions obertes
+## 22. Decisions obertes
 
 | # | Decisió | Bloqueja |
 |---|---|---|
 | 1 | **Nom i domini.** Comprovar `manilla.cat` / `.app` i cerca de marca | La identitat visual |
 | 2 | **Reglament de referència.** Triar-ne un de públic i concret com a font de veritat per a les variants, i citar-lo | Les proves de la F0 |
-| 3 | **Android: Tauri o Kotlin amb UniFFI.** Es decideix a la F3 amb dispositius reals | La F6 |
+| 3 | ~~Android: Tauri o Kotlin~~ → **decidit: Kotlin natiu amb UniFFI** (§3.5) | — |
 | 4 | **Il·lustració de la baralla.** Encàrrec propi, cal pressupostar-lo | El disseny |
 | 5 | **Compra única al costat de la subscripció** (§11) | El llançament comercial |
 | 6 | **Un club o casal disposat a fer de pilot.** És la validació comercial real i no és codi | La F5 |
@@ -769,7 +1033,7 @@ El problema real d'un joc per parelles és **la confabulació**: dos jugadors pa
 
 ---
 
-## 17. Com fer servir aquest document
+## 23. Com fer servir aquest document
 
 Aquest fitxer és el contracte del projecte. Qualsevol decisió que el contradigui s'escriu aquí abans d'implementar-se.
 
@@ -782,4 +1046,4 @@ Les quatre seccions on un error costa car:
 
 ---
 
-*Manilla · Brief tècnic v1.1 · 25 de setembre del 2026*
+*Manilla · Brief tècnic v1.3 · 25 de setembre del 2026*
