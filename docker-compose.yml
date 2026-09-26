@@ -1,0 +1,32 @@
+# Entorn local idèntic al que després corre a Hetzner.
+#   docker compose up --build
+# El servidor queda a http://localhost:8080
+services:
+  bd:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: manilla
+      POSTGRES_PASSWORD: manilla
+      POSTGRES_DB: manilla
+    ports: ["5432:5432"]
+    volumes: [dades:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U manilla -d manilla"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  servidor:
+    build: .
+    depends_on:
+      bd: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://manilla:manilla@bd:5432/manilla
+      PORT: 8080
+      STATIC_DIR: /app/public
+      COOKIE_SECURE: 0
+      RUST_LOG: manilla_server=debug,tower_http=info
+    ports: ["8080:8080"]
+
+volumes:
+  dades:

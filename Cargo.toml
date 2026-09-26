@@ -1,5 +1,5 @@
 [workspace]
-members = ["core"]
+members = ["core", "server"]
 resolver = "2"
 
 [workspace.package]
@@ -11,5 +11,7 @@ license = "MIT"
 opt-level = "z"
 lto = true
 codegen-units = 1
-panic = "abort"
+# El servidor ha de sobreviure a un panic d'una petició: amb "abort" el
+# procés sencer cauria. El WASM creix una mica i val la pena.
+panic = "unwind"
 strip = true

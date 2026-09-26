@@ -92,10 +92,10 @@ export function Inici({
         </div>
       )}
 
-      {/* La llum es canvia des d'aquí: és el primer que es vol tocar i abans
+      {/* L'ambient es canvia des d'aquí: és el primer que es vol tocar i abans
           calia haver creat el perfil per arribar als ajustos. */}
-      <div className="tria-llum">
-        <span>Llum</span>
+      <div className="tria-ambient">
+        <span>Ambient</span>
         <div className="tria">
           {TEMES.map((t) => (
             <button key={t.id} data-sel={ajustos.tema === t.id}
@@ -316,7 +316,7 @@ export function PantallaAjustos({
   return (
     <Pantalla titol="Ajustos" sub="Com vols veure i sentir la taula." enrere={onEnrere}>
       <section className="bloc">
-        <h2>Llum de la sala</h2>
+        <h2>Ambient</h2>
         <div className="tria">
           {(["clar", "fosc", "contrast"] as const).map((t) => (
             <button key={t} data-sel={ajustos.tema === t} onClick={() => set({ tema: t })}>{t}</button>
