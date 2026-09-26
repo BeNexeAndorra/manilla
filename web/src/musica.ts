@@ -19,8 +19,9 @@ export const PECES: { id: Peca; nom: string; detall: string }[] = [
   { id: "silencis", nom: "Silencis", detall: "molt espaiada, gairebé no hi és" },
 ];
 
-/** Sostre absolut: encara que el volum vagi al màxim, no passa d'aquí. */
-const SOSTRE = 0.45;
+/* El control de volum val el que diu. Abans hi havia un sostre ocult del
+   45% que feia que un 24% al control fos un 12% real: el número mentia i
+   costava d'afinar. Ara el que es marca és el que sona. */
 const ESVAIMENT = 600;   // ms
 
 let element: HTMLAudioElement | null = null;
@@ -30,7 +31,7 @@ let peca: Peca = "nocturn";
 let esmorteida = false;
 let temporitzador: number | undefined;
 
-const objectiu = () => (encesa ? volum * SOSTRE * (esmorteida ? 0.35 : 1) : 0);
+const objectiu = () => (encesa ? volum * (esmorteida ? 0.35 : 1) : 0);
 
 function crea(): HTMLAudioElement | null {
   if (typeof window === "undefined") return null;
@@ -39,6 +40,11 @@ function crea(): HTMLAudioElement | null {
     element.loop = true;
     element.preload = "none";
     element.volume = 0;
+    // Va al document, encara que sigui invisible: així es pot inspeccionar
+    // amb les eines del navegador quan alguna cosa no sona.
+    element.setAttribute("data-manilla", "musica");
+    element.style.display = "none";
+    document.body.appendChild(element);
   }
   return element;
 }

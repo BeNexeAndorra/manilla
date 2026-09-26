@@ -67,7 +67,7 @@ type Magatzem = {
 
 export const AJUSTOS_INICIALS: Ajustos =
   { tema: "fosc", gran: false, trama: false, so: true, baralla: "classica",
-    musica: false, peca: "nocturn", volum: 0.25 };
+    musica: false, peca: "nocturn", volum: 0.18 };
 export const CONFIG_INICIAL: Config = { nivell: 1, objectiu: 101 };
 export const ESTADISTIQUES_INICIALS: Estadistiques = {
   partides: 0, guanyades: 0, mans: 0, mansGuanyades: 0,

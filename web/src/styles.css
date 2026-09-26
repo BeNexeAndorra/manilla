@@ -936,7 +936,7 @@ body{
   width:min(168%, 1240px); aspect-ratio:880 / 662;
   pointer-events:none; z-index:0;
   background-color:var(--text);
-  opacity:.14;
+  opacity:.09;
 
   -webkit-mask-image:url(/escena.png),
     radial-gradient(ellipse 88% 96% at 50% 76%, #000 30%, rgba(0,0,0,.55) 64%, transparent 100%);
@@ -951,7 +951,7 @@ body{
   -webkit-mask-composite:source-in;
   mask-composite:intersect;
 }
-[data-tema="clar"] .escena-portada{opacity:.17}
+[data-tema="clar"] .escena-portada{opacity:.11}
 /* En alt contrast fa nosa: la pantalla ha de ser plana i llegible (§4.6). */
 [data-tema="contrast"] .escena-portada{display:none}
 .pantalla > .columna-central{position:relative;z-index:1}
