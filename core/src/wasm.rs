@@ -40,6 +40,13 @@ impl Taula {
             "contract": self.state.contract,
             "legal": legal,
             "tricksPlayed": self.state.tricks.len(),
+            // Bases ja tancades, per a l'historial i l'anàlisi (§7.4).
+            "tricks": self.state.tricks.iter().map(|t| serde_json::json!({
+                "plays": t.plays.iter()
+                    .map(|p| serde_json::json!({ "seat": p.seat, "card": p.card.code() }))
+                    .collect::<Vec<_>>(),
+                "winner": t.winner(self.state.trump()),
+            })).collect::<Vec<_>>(),
             "result": self.state.result,
             "mayDouble": self.state.may_double,
         });
@@ -76,13 +83,13 @@ impl Taula {
 
     /// Fa jugar els bots fins que torni a tocar a una persona.
     /// Retorna quantes jugades ha fet, perquè la interfície pugui animar-les.
-    pub fn juga_bots(&mut self) -> u32 {
+    pub fn juga_bots(&mut self, level: u8) -> u32 {
         let mut fetes = 0;
         while self.state.phase == HandPhase::Playing
             && !self.humans.contains(&self.state.turn)
         {
             let seat = self.state.turn;
-            let Some(card) = choose_card(&self.state, seat, Level::Casal) else { break };
+            let Some(card) = choose_card(&self.state, seat, Level::from_u8(level)) else { break };
             if self.state.play(seat, card).is_err() {
                 break;
             }
