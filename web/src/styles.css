@@ -918,3 +918,17 @@ body{
 .full.bases-full{height:min(80vh,680px)}
 .full.bases-full .llista-bases{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;margin:0 -24px;padding:0 24px}
 .full.bases-full .base-cartes{flex-wrap:wrap}
+
+/* ── l'escena de la portada ─────────────────────────────────────────────
+   Va al darrere de tot i molt apagada: ha de notar-se sense mirar-la.
+   `--esc-buit` és el color amb què es «talla» la silueta, i per això ha de
+   ser el mateix que el fons de la sala. */
+.escena-portada{
+  position:absolute; left:50%; bottom:0; transform:translateX(-50%);
+  width:min(140%, 1000px); height:min(74%, 600px);
+  pointer-events:none; z-index:0;
+  color:var(--text); opacity:.055;
+}
+[data-tema="clar"] .escena-portada{opacity:.085}
+[data-tema="contrast"] .escena-portada{display:none}
+.pantalla > .columna-central{position:relative;z-index:1}

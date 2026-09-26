@@ -30,11 +30,13 @@ de `web/src/Carta.tsx`, seleccionable als mateixos ajustos. Vegeu la §6.0 de
 | `web/public/musica/escalfor.m4a` | `Settling Warmth.m4a`, recodificat a AAC 96 kbps |
 | `web/public/musica/silencis.m4a` | `Silence Between Phrases.m4a`, recodificat a AAC 96 kbps |
 
-> ⚠️ **Falta saber-ne la llicència.** Aquests quatre fitxers els va portar el
-> Marcel i no en consta la procedència. Abans de publicar l'aplicació cal
-> deixar escrit aquí d'on surten i amb quins drets es poden fer servir. Si són
-> d'un banc de música o generats amb un servei, cal l'enllaç a les seves
-> condicions.
+**Autoria:** peces fetes pel Marcel amb **Suno** i eines pròpies locals;
+creació seva en un ~90%. No hi ha obra de tercers.
+
+> **Val la pena comprovar una cosa abans de cobrar res per l'aplicació:** amb
+> Suno, els drets d'explotació comercial de les peces depenen del pla que es
+> tingui contractat. Si Manilla arriba a tenir subscripcions, convé deixar
+> constància aquí del pla i de la data en què es van generar.
 
 La resta de sons —clic, carta, repartiment, basa, cant, contro i acord de
 final de mà— són **sintetitzats amb Web Audio** a `web/src/so.ts`: no hi ha

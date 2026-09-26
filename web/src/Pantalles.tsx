@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import Marca from "./Marca";
+import Escena from "./Escena";
 import { so } from "./so";
 import { musica, PECES } from "./musica";
 import { Carta, CartaClassica, Simbol } from "./Carta";
@@ -10,13 +11,14 @@ import {
 /* ───────────────────────────── bastida comuna ─────────────────────────── */
 
 function Pantalla({
-  titol, sub, enrere, children, ampla = false,
+  titol, sub, enrere, children, ampla = false, fons = false,
 }: {
   titol?: string; sub?: string; enrere?: () => void;
-  children: React.ReactNode; ampla?: boolean;
+  children: React.ReactNode; ampla?: boolean; fons?: boolean;
 }) {
   return (
     <div className="pantalla">
+      {fons && <Escena className="escena-portada" />}
       <div className={`columna-central${ampla ? " ampla" : ""}`}>
         {(titol || enrere) && (
           <div className="cap-pantalla">
@@ -62,7 +64,7 @@ export function Inici({
   onRegles: () => void; onAjustos: () => void;
 }) {
   return (
-    <Pantalla>
+    <Pantalla fons>
       <div className="portada">
         <Marca mida={96} />
         <h1 className="marca-nom">Manilla</h1>
