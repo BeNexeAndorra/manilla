@@ -586,7 +586,9 @@ body{
 
 /* fulls flotants compartits pels dos taulers */
 .capa-modal{position:fixed;inset:0;z-index:200}
-.capa-modal .full{max-width:430px;left:50%;transform:translateX(-50%)}
+/* Cal reposar `right`: la regla base de .full posa left:0;right:0, i amb
+   left:50% l'amplada quedava reduïda a la meitat del contenidor. */
+.capa-modal .full{left:50%;right:auto;width:100%;max-width:430px;transform:translateX(-50%)}
 @keyframes puja-centre{from{transform:translate(-50%,100%)}to{transform:translate(-50%,0)}}
 .capa-modal .full{animation:puja-centre 320ms var(--ease-entra)}
 .titol-full{display:flex;flex-direction:column;gap:4px}
@@ -782,3 +784,85 @@ body{
 /* tria d'ambient a la pantalla d'inici */
 .tria-ambient{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:4px}
 .tria-ambient > span{font-size:15px;font-weight:600;color:var(--text-3)}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Fitxa de regles. Full alt amb el cos desplaçable: el títol i el botó de
+   tancar no es mouen mai, perquè s'ha de poder tancar sense buscar-lo.
+   ═══════════════════════════════════════════════════════════════════ */
+
+.capa-modal .full.regles{max-width:520px;height:min(88vh,780px)}
+.cos-regles{
+  flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain;
+  display:flex; flex-direction:column; gap:28px;
+  margin:0 -24px; padding:4px 24px 8px;
+}
+.seccio-regles{display:flex;flex-direction:column;gap:12px}
+.seccio-regles h3{
+  font-family:var(--f-titol); font-weight:600; font-size:20px; color:var(--text);
+}
+.seccio-regles .nota{
+  font-size:15px; line-height:21px; color:var(--text-2); text-wrap:pretty;
+}
+.seccio-regles .nota b{color:var(--text);font-weight:600}
+
+/* jerarquia */
+.tira-jerarquia{
+  display:flex; gap:6px; overflow-x:auto; overscroll-behavior-x:contain;
+  padding:4px 0 10px; scrollbar-width:thin;
+}
+.graó{flex:none;border-radius:6px;box-shadow:var(--ombra-carta)}
+.graó > *{display:block;border-radius:6px}
+.extrems{display:flex;align-items:center;gap:10px;margin-top:-4px}
+.extrems span{font-size:13px;font-weight:600;color:var(--text-3);white-space:nowrap}
+.extrems i{
+  flex:1; height:2px; border-radius:2px;
+  background:linear-gradient(90deg, var(--accent), rgba(139,130,117,.25));
+}
+
+/* valors */
+.taula-valors{display:flex;flex-direction:column;list-style:none}
+.taula-valors li{
+  display:flex; align-items:center; gap:12px;
+  padding:8px 0; border-top:1px solid var(--vora-suau);
+}
+.taula-valors li:first-child{border-top:none}
+.taula-valors .cromo{flex:none;width:34px;display:flex;justify-content:center}
+.taula-valors .cromo > *{border-radius:4px;box-shadow:var(--ombra-1)}
+.basa-mini{
+  display:flex; align-items:center; justify-content:center;
+  width:34px; height:51px; border-radius:4px;
+  border:1px dashed var(--vora-forta); background:var(--sup-1);
+  font-size:11px; color:var(--text-3);
+}
+.taula-valors .nom{flex:1;font-size:17px;color:var(--text)}
+.taula-valors b{
+  font-family:var(--f-num); font-weight:600; font-size:24px;
+  font-variant-numeric:tabular-nums; color:var(--llauto);
+}
+
+/* obligacions */
+.obligacions{display:flex;flex-direction:column;gap:10px;list-style:none}
+.obligacions li{display:flex;gap:12px;align-items:flex-start}
+.obligacions .num{
+  flex:none; width:26px; height:26px; border-radius:999px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--accent); color:var(--tinta);
+  font-family:var(--f-num); font-weight:600; font-size:15px;
+}
+.obligacions .text{display:flex;flex-direction:column;gap:2px;min-width:0}
+.obligacions .text b{font-size:17px;font-weight:600;color:var(--text)}
+.obligacions .text span{font-size:15px;line-height:21px;color:var(--text-2)}
+
+/* multiplicadors */
+.multiplicadors{display:flex;flex-direction:column;list-style:none}
+.multiplicadors li{
+  display:flex; align-items:center; gap:12px;
+  padding:10px 0; border-top:1px solid var(--vora-suau);
+}
+.multiplicadors li:first-child{border-top:none}
+.multiplicadors .text{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}
+.multiplicadors .text b{font-size:17px;font-weight:600;color:var(--text)}
+.multiplicadors .text span{font-size:13px;color:var(--text-3)}
+.multiplicadors .mult{
+  font-family:var(--f-num); font-weight:600; font-size:20px; color:var(--llauto);
+}

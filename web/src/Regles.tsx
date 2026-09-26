@@ -1,71 +1,144 @@
-import { Carta } from "./Carta";
+import { Carta, CartaClassica, Simbol, type Pal } from "./Carta";
 
 /**
- * Les regles sempre a mà. El jugador no ha de sortir mai del joc per
+ * Les regles, sempre a mà. El jugador no ha de sortir mai del joc per
  * consultar la jerarquia ni els valors: és el que evita que un principiant
- * abandoni a la tercera jugada il·legal (§14 del brief).
+ * abandoni a la tercera jugada il·legal (§9.8 de DISSENY.md).
+ *
+ * No és un tutorial ni una benvinguda: és una fitxa de consulta que es pot
+ * obrir enmig d'una jugada i tancar-la sense perdre el torn.
  */
-export default function Regles({ onClose }: { onClose: () => void }) {
+
+/** L'ordre de força dins d'un pal. La manilla primer, el dos l'últim. */
+const JERARQUIA = [9, 1, 12, 11, 10, 8, 7, 6, 5, 4, 3, 2];
+
+const VALORS: [number | null, string, number][] = [
+  [9, "manilla", 5],
+  [1, "as", 4],
+  [12, "rei", 3],
+  [11, "cavall", 2],
+  [10, "sota", 1],
+  [null, "cada basa", 1],
+];
+
+const OBLIGACIONS = [
+  ["Serveix el pal", "Si tens cartes del pal de sortida, n'has de jugar una."],
+  ["Mata si pots", "Si el company no va guanyant la basa, has de superar la carta que mana."],
+  ["Falla amb trumfo", "Si no tens el pal i el company no guanya, has de tallar."],
+  ["Si el company mana", "Jugues el que vulguis: la basa ja és vostra."],
+  ["Si no pots res", "Si no pots ni matar ni fallar, jugues lliurement."],
+];
+
+const MULTIPLICADORS = [
+  ["Botifarra", "sense trumfo", "×2"],
+  ["Contro", "el canten els rivals de qui ha cantat", "×2"],
+  ["Recontro", "resposta de qui havia cantat", "×4"],
+  ["Sant Vicenç", "només si hi ha trumfo", "×8"],
+  ["Barraca", "l'últim graó", "×16"],
+];
+
+export default function Regles({
+  onClose, classica = true,
+}: { onClose: () => void; classica?: boolean }) {
+  const mostra = (rang: number, pal: Pal = "o", w = 46) =>
+    classica
+      ? <CartaClassica code={`${rang}${pal}`} w={w} />
+      : <Carta code={`${rang}${pal}`} w={w} />;
+
   return (
-    <div className="rerefons" onClick={onClose}>
-      <div className="full" onClick={(e) => e.stopPropagation()}>
-        <h2>Les regles</h2>
-        <p className="sub">
-          La botifarra té una regla que sorprèn tothom: <b>el 9 mana per sobre de l'as</b>.
-        </p>
-
-        <div className="regles-seccio">
-          <h3>Jerarquia dins d'un pal</h3>
-          <div className="ordre">
-            {[9, 1, 12, 11, 10, 8, 7, 6, 5, 4, 3, 2].map((r, i) => (
-              <div className="p" key={r}>
-                <Carta code={`${r}o`} w={30} />
-                <span>{i === 0 ? "mana" : i === 11 ? "més baixa" : ""}</span>
-              </div>
-            ))}
-          </div>
+    <div className="capa-modal">
+      <div className="rerefons" onClick={onClose} />
+      <div className="full regles" role="dialog" aria-label="Les regles de la botifarra">
+        <div className="nansa" />
+        <div className="titol-full">
+          <h2>Les regles</h2>
+          <span className="sub">
+            La que sorprèn tothom: <b>el nou mana per sobre de l'as</b>.
+          </span>
         </div>
 
-        <div className="regles-seccio">
-          <h3>Valor de les cartes · 72 punts per mà</h3>
-          <div className="valors">
-            {[["9", "5", "manilla"], ["1", "4", "as"], ["12", "3", "rei"],
-              ["11", "2", "cavall"], ["10", "1", "sota"], ["basa", "1", "cada una"]].map(([k, v, n]) => (
-              <div className="valor" key={k}>
-                <b>{v}</b><span>{n}</span>
-              </div>
-            ))}
-          </div>
-          <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>
-            60 punts de cartes + 12 de bases. Guanya qui passa de 36, i anota la diferència.
-          </p>
+        <div className="cos-regles">
+          <section className="seccio-regles">
+            <h3>Jerarquia dins d'un pal</h3>
+            <div className="tira-jerarquia">
+              {JERARQUIA.map((r) => (
+                <div key={r} className="graó">{mostra(r)}</div>
+              ))}
+            </div>
+            <div className="extrems">
+              <span>mana</span>
+              <i />
+              <span>més baixa</span>
+            </div>
+            <p className="nota">
+              El trumfo mata qualsevol carta d'un altre pal, per baixa que sigui.
+            </p>
+          </section>
+
+          <section className="seccio-regles">
+            <h3>Què val cada carta</h3>
+            <ul className="taula-valors">
+              {VALORS.map(([rang, nom, punts]) => (
+                <li key={nom}>
+                  <span className="cromo">
+                    {rang ? mostra(rang, "o", 34) : <span className="basa-mini">basa</span>}
+                  </span>
+                  <span className="nom">{nom}</span>
+                  <b>{punts}</b>
+                </li>
+              ))}
+            </ul>
+            <p className="nota">
+              <b>60 punts de cartes + 12 de bases = 72 per mà.</b> Guanya qui
+              passa de 36, i anota la diferència multiplicada pel contracte.
+            </p>
+          </section>
+
+          <section className="seccio-regles">
+            <h3>Què pots jugar</h3>
+            <ol className="obligacions">
+              {OBLIGACIONS.map(([titol, detall], i) => (
+                <li key={titol}>
+                  <span className="num">{i + 1}</span>
+                  <span className="text"><b>{titol}</b><span>{detall}</span></span>
+                </li>
+              ))}
+            </ol>
+            <p className="nota">
+              No cal que te'n recordis: <b>les cartes que no pots jugar surten
+              apagades</b> i no es deixen tocar. Si en toques una, el joc et diu
+              per què.
+            </p>
+          </section>
+
+          <section className="seccio-regles">
+            <h3>Els pals</h3>
+            <div className="mostra-pals">
+              {(["o", "c", "e", "b"] as const).map((p) => (
+                <span key={p} className="mostra">
+                  <Simbol pal={p} w={30} />
+                  <i>{{ o: "oros", c: "copes", e: "espases", b: "bastos" }[p]}</i>
+                </span>
+              ))}
+            </div>
+          </section>
+
+          <section className="seccio-regles">
+            <h3>Multiplicadors</h3>
+            <ul className="multiplicadors">
+              {MULTIPLICADORS.map(([nom, detall, mult]) => (
+                <li key={nom}>
+                  <span className="text"><b>{nom}</b><span>{detall}</span></span>
+                  <b className="mult">{mult}</b>
+                </li>
+              ))}
+            </ul>
+          </section>
         </div>
 
-        <div className="regles-seccio">
-          <h3>Què pots jugar</h3>
-          <ol className="llista">
-            <li><b>Serveix el pal</b> de sortida, si en tens.</li>
-            <li>Si el company <b>no</b> va guanyant la basa, <b>has de matar</b> si pots.</li>
-            <li>Si no tens el pal i el company no guanya, <b>has de fallar</b> amb trumfo.</li>
-            <li>Si el company <b>ja va guanyant</b>, jugues el que vulguis.</li>
-            <li>Si no pots matar ni fallar, jugues lliurement.</li>
-          </ol>
-          <p className="sub" style={{ marginTop: 10, marginBottom: 0 }}>
-            Les cartes que no pots jugar surten apagades. No cal que ho recordis.
-          </p>
+        <div className="botons">
+          <button className="b-principal" onClick={onClose}>Tanca</button>
         </div>
-
-        <div className="regles-seccio">
-          <h3>Multiplicadors</h3>
-          <ol className="llista" style={{ listStyle: "none", paddingLeft: 0 }}>
-            <li><b>Botifarra</b> (sense trumfo) · dobla sempre</li>
-            <li><b>Contro</b> ×2 · el diuen els rivals de qui ha cantat</li>
-            <li><b>Recontro</b> ×4 · resposta de qui havia cantat</li>
-            <li><b>Sant Vicenç</b> ×8 · només si hi ha trumfo</li>
-          </ol>
-        </div>
-
-        <button className="btn" style={{ width: "100%" }} onClick={onClose}>Tanca</button>
       </div>
     </div>
   );

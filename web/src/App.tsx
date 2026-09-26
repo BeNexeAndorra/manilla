@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Joc, { type FiPartida } from "./Joc";
 import Regles from "./Regles";
+import { so } from "./so";
 import {
   Inici, Compte, Configuracio, Resultat, Estadistiques, PantallaAjustos,
 } from "./Pantalles";
@@ -22,6 +23,20 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.tema = estat.ajustos.tema;
   }, [estat.ajustos.tema]);
+
+  useEffect(() => { so.activa(estat.ajustos.so); }, [estat.ajustos.so]);
+
+  /* Un clic per a tots els botons, en un sol lloc: si s'hagués de posar a
+     cada `onClick` se n'oblidaria algun. Les cartes no hi entren perquè no
+     són <button> i ja tenen el seu so. */
+  useEffect(() => {
+    const prem = (e: PointerEvent) => {
+      const dest = e.target as HTMLElement | null;
+      if (dest?.closest?.("button")) so.clic();
+    };
+    document.addEventListener("pointerdown", prem, true);
+    return () => document.removeEventListener("pointerdown", prem, true);
+  }, []);
 
   const desaPerfil = (nom: string) => {
     const perfil = dades.desaPerfil(nom);
@@ -123,7 +138,12 @@ export default function App() {
         />
       )}
 
-      {regles && <Regles onClose={() => setRegles(false)} />}
+      {regles && (
+        <Regles
+          onClose={() => setRegles(false)}
+          classica={estat.ajustos.baralla === "classica"}
+        />
+      )}
     </>
   );
 }

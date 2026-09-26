@@ -288,7 +288,8 @@ async fn estadistiques(estat: &Estat, usuari: Uuid) -> Resultat<Value> {
            coalesce(sum(mans_guanyades), 0),
            coalesce(sum(nos), 0),
            coalesce(sum(ells), 0),
-           coalesce(max(millor_ma), 0)
+           -- max() d'un int4 torna int4, no int8: cal dir-ho.
+           coalesce(max(millor_ma), 0)::bigint
          from partides where usuari = $1",
     )
     .bind(usuari)

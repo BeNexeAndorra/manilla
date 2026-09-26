@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Marca from "./Marca";
+import { so } from "./so";
 import { Carta, CartaClassica, Simbol } from "./Carta";
 import {
   dades, type Ajustos, type Config, type Estadistiques, type Perfil, type ResumPartida,
@@ -219,6 +220,11 @@ export function Configuracio({
 export function Resultat({
   resum, onAltra, onMenu,
 }: { resum: ResumPartida; onAltra: () => void; onMenu: () => void }) {
+  // Només en guanyar la partida. En perdre no sona res: no s'hi fa broma.
+  useEffect(() => {
+    if (resum.guanyada) so.triomf();
+  }, [resum.guanyada, resum.id]);
+
   return (
     <Pantalla>
       <div className="portada">
@@ -329,6 +335,14 @@ export function PantallaAjustos({
           aria-pressed={ajustos.gran}>
           <span className="et"><b>Cartes grans</b><span>+35%, la mà en dues files</span></span>
           <span className="interruptor" data-on={ajustos.gran}><i /></span>
+        </button>
+        <button className="ajust" onClick={() => set({ so: !ajustos.so })}
+          aria-pressed={ajustos.so}>
+          <span className="et">
+            <b>So</b>
+            <span>cartes i clics, molt fluixet. Res de música</span>
+          </span>
+          <span className="interruptor" data-on={ajustos.so}><i /></span>
         </button>
         <button className="ajust" onClick={() => set({ trama: !ajustos.trama })}
           aria-pressed={ajustos.trama}>

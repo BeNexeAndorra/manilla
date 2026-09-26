@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import init, { Taula } from "./core/botifarra_core";
 import { Carta, CartaClassica, Simbol, NOM_PAL, type Pal } from "./Carta";
 import Marca from "./Marca";
+import { so } from "./so";
 import type { Ajustos, Config, Perfil, ResumPartida } from "./dades";
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -252,6 +253,8 @@ export default function Joc({
   const mansGuanyades = useRef(0);
   const millorMa = useRef(0);
   const acabada = useRef(false);
+  const cartesVistes = useRef(0);
+  const basesVistes = useRef(0);
 
   const escriptori = ample >= AMPLE_ESCRIPTORI;
 
@@ -289,6 +292,9 @@ export default function Joc({
     }
     refresca();
     setAvis(""); setSel(null);
+    cartesVistes.current = 0;
+    basesVistes.current = 0;
+    for (let i = 0; i < 3; i++) setTimeout(() => so.reparteix(), i * 70);
   }, [refresca]);
 
   useEffect(() => {
@@ -296,6 +302,22 @@ export default function Joc({
     arrenca().then(() => { if (viu) { setLlest(true); novaMa(); } });
     return () => { viu = false; };
   }, [novaMa]);
+
+  /* So de la taula: es mira el que ha canviat a la vista, i així sona tant
+     si ha jugat una persona com si ha jugat un bot. */
+  useEffect(() => {
+    if (!v) return;
+    const n = v.trick.length;
+    if (n > cartesVistes.current) so.carta();
+    cartesVistes.current = n;
+
+    if (v.tricksPlayed > basesVistes.current) so.basa();
+    basesVistes.current = v.tricksPlayed;
+  }, [v]);
+
+  useEffect(() => {
+    if (v?.phase === "finished") so.fi();
+  }, [v?.phase]);
 
   /* Els bots juguen sols quan els toca. */
   useEffect(() => {
@@ -355,6 +377,7 @@ export default function Joc({
   const mult = v.contract ? multiplicador(v.contract) : 1;
 
   const canta = (q: string) => {
+    so.canta();
     taula.current!.canta(JO, q);
     while (true) {
       const st = JSON.parse(taula.current!.view(JO)) as Vista;
@@ -366,7 +389,7 @@ export default function Joc({
   };
 
   const comenca = () => { taula.current!.comenca(); refresca(); };
-  const contra = () => { taula.current!.contra(v.mayDouble ?? 1); refresca(); };
+  const contra = () => { so.contro(); taula.current!.contra(v.mayDouble ?? 1); refresca(); };
 
   /* Tocar una vegada tria; tocar la mateixa carta la juga (§9.5). */
   const toca = (code: string) => {
