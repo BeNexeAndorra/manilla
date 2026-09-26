@@ -9,6 +9,58 @@
 
 export type Pal = "o" | "c" | "e" | "b";
 
+/* ─────────────────────── baralla «Naipes Libres» ───────────────────────
+   Full de 2496 × 1595 amb una retícula de 12 × 5 cel·les de 208 × 319; la
+   carta ocupa 206 × 317 dins de cada cel·la, amb un solc d'1 px. Es mostra
+   com a mosaic: no es retalla ni es torna a publicar cap fitxer, només se'n
+   mostra la regió que toca.
+
+   Obra de Basquetteur (Wikimedia Commons), CC BY-SA 3.0. L'atribució és a la
+   pantalla d'ajustos, i cal mantenir-la.
+   ------------------------------------------------------------------- */
+const FULL = { w: 2496, h: 1595, cel: 208, fil: 319, carta: 206, alt: 317 };
+const FILA: Record<Pal, number> = { o: 0, c: 1, e: 2, b: 3 };
+
+/** Estil de mosaic per a una cel·la de la baralla, en una carta d'amplada `w`. */
+function mosaic(col: number, fila: number, w: number, h: number) {
+  const sx = w / FULL.carta, sy = h / FULL.alt;
+  return {
+    backgroundImage: "url(/baralla.png)",
+    backgroundSize: `${(FULL.w * sx).toFixed(2)}px ${(FULL.h * sy).toFixed(2)}px`,
+    backgroundPosition:
+      `${(-(FULL.cel * col + 1) * sx).toFixed(2)}px ${(-(FULL.fil * fila + 1) * sy).toFixed(2)}px`,
+    backgroundRepeat: "no-repeat",
+  };
+}
+
+/** Una carta de la baralla clàssica. */
+export function CartaClassica({
+  code, w = 74, onClick, morta = false,
+}: { code: string; w?: number; onClick?: () => void; morta?: boolean }) {
+  const rank = parseInt(code.slice(0, -1), 10);
+  const pal = code.slice(-1) as Pal;
+  const h = Math.round(w * 1.5);
+  return (
+    <div
+      className="carta foto"
+      style={{ width: w, height: h, ...mosaic(rank - 1, FILA[pal], w, h) }}
+      onClick={morta ? undefined : onClick}
+      role={onClick ? "button" : "img"}
+      aria-label={`${rank} de ${NOM_PAL[pal]}`}
+      aria-disabled={morta || undefined}
+    />
+  );
+}
+
+/** El revers de la baralla clàssica: última filera, segona cel·la. */
+export function DorsClassic({ w = 74 }: { w?: number }) {
+  const h = Math.round(w * 1.5);
+  return (
+    <div className="carta foto" aria-hidden="true"
+      style={{ width: w, height: h, ...mosaic(1, 4, w, h) }} />
+  );
+}
+
 export const COLOR: Record<Pal, string> = {
   o: "#B07D0A", c: "#9E2B2B", e: "#2B4568", b: "#43632B",
 };
@@ -137,6 +189,16 @@ function Basto({ p }: { p: Pal }) {
   );
 }
 
+/** Símbol de pal solt, per a la barra de contracte i el full de cantar. */
+export function Simbol({ pal, w = 20 }: { pal: Pal; w?: number }) {
+  return (
+    <svg width={w} height={w} viewBox="0 0 100 100" aria-hidden="true"
+      style={{ display: "block", flex: "none" }}>
+      <Emblema pal={pal} />
+    </svg>
+  );
+}
+
 function Emblema({ pal }: { pal: Pal }) {
   switch (pal) {
     case "o": return <Oro p={pal} />;
@@ -247,20 +309,27 @@ const PIPS: Record<number, [number, number][]> = {
 
 /* ───────────────────────── la carta ───────────────────────── */
 
+/**
+ * Proporció 1 : 1,5 (DISSENY.md §6.1), la de la baralla espanyola.
+ * La banda útil del cos va de y=20 a y=130; les posicions de PIPS es van
+ * calcular sobre una banda de 116 px i es reajusten aquí sense deformar
+ * l'emblema: només es mou el centre, mai l'escala.
+ */
+const yAjust = (y: number) => 20 + (y - 20) * (110 / 116);
+
 export function Carta({
   code, w = 74, onClick, morta = false,
 }: { code: string; w?: number; onClick?: () => void; morta?: boolean }) {
   const rank = parseInt(code.slice(0, -1), 10);
   const pal = code.slice(-1) as Pal;
   const c = COLOR[pal], d = FOSC[pal];
-  const h = Math.round(w * 1.56);
+  const h = Math.round(w * 1.5);
   const esFigura = rank >= 10 && rank <= 12;
-  const esManilla = rank === 9;
   const nom = `${rank} de ${NOM_PAL[pal]}`;
   const uid = `${rank}${pal}`;
 
   return (
-    <svg className="carta" width={w} height={h} viewBox="0 0 100 156"
+    <svg className="carta" width={w} height={h} viewBox="0 0 100 150"
       onClick={morta ? undefined : onClick} role={onClick ? "button" : "img"}
       aria-label={nom} aria-disabled={morta || undefined}>
       <defs>
@@ -268,33 +337,23 @@ export function Carta({
           <stop offset="0%" stopColor="#FBF7EE" /><stop offset="55%" stopColor="#F4EFE3" />
           <stop offset="100%" stopColor="#E9E1D0" />
         </linearGradient>
-        <clipPath id={`cl${uid}`}><rect x="10" y="20" width="80" height="116" rx="3" /></clipPath>
+        <clipPath id={`cl${uid}`}><rect x="10" y="20" width="80" height="110" rx="3" /></clipPath>
       </defs>
 
       {/* paper */}
-      <rect width="100" height="156" rx="8" fill={`url(#p${uid})`} />
+      <rect width="100" height="150" rx="8" fill={`url(#p${uid})`} />
       {/* orla doble amb cantonades */}
-      <rect x="4" y="4" width="92" height="148" rx="6" fill="none" stroke={d} strokeWidth="1.6" />
-      <rect x="7.5" y="7.5" width="85" height="141" rx="4" fill="none" stroke={c} strokeWidth="0.8" opacity=".55" />
-      {[[10, 10, 1, 1], [90, 10, -1, 1], [10, 146, 1, -1], [90, 146, -1, -1]].map(([x, y, sx, sy], i) => (
+      <rect x="4" y="4" width="92" height="142" rx="6" fill="none" stroke={d} strokeWidth="1.6" />
+      <rect x="7.5" y="7.5" width="85" height="135" rx="4" fill="none" stroke={c} strokeWidth="0.8" opacity=".55" />
+      {[[10, 10, 1, 1], [90, 10, -1, 1], [10, 140, 1, -1], [90, 140, -1, -1]].map(([x, y, sx, sy], i) => (
         <path key={i} d={`M${x} ${y} l${6 * sx} 0 M${x} ${y} l0 ${6 * sy}`}
           stroke={c} strokeWidth="1.6" strokeLinecap="round" opacity=".8" />
       ))}
 
-      {/* índexs */}
-      <g>
-        <text x="11" y="19" fontFamily="Bitter, Georgia, serif" fontSize="15" fontWeight="700" fill={c}>{rank}</text>
-        <g transform="translate(76,7) scale(0.16)"><Emblema pal={pal} /></g>
-      </g>
-      <g transform="rotate(180 50 78)">
-        <text x="11" y="19" fontFamily="Bitter, Georgia, serif" fontSize="15" fontWeight="700" fill={c}>{rank}</text>
-        <g transform="translate(76,7) scale(0.16)"><Emblema pal={pal} /></g>
-      </g>
-
-      {/* cos */}
+      {/* cos, sota els índexs perquè mai no els tapi */}
       <g clipPath={`url(#cl${uid})`}>
         {esFigura ? (
-          <g transform="translate(14,22) scale(0.72)">
+          <g transform="translate(14,21) scale(0.70)">
             {rank === 12 ? <Rei pal={pal} /> : rank === 11 ? <Cavall pal={pal} /> : <Sota pal={pal} />}
           </g>
         ) : (
@@ -302,7 +361,7 @@ export function Carta({
             const s = rank === 1 ? 0.46 : rank <= 3 ? 0.3 : rank <= 6 ? 0.24 : 0.2;
             const k = s * 100;
             return (
-              <g key={i} transform={`translate(${x - k / 2},${y - k / 2}) scale(${s})`}>
+              <g key={i} transform={`translate(${x - k / 2},${yAjust(y) - k / 2}) scale(${s})`}>
                 <Emblema pal={pal} />
               </g>
             );
@@ -310,43 +369,46 @@ export function Carta({
         )}
       </g>
 
-      {/* la manilla porta segell: és la carta que mana, i val 5 */}
-      {esManilla && (
-        <g>
-          <circle cx="50" cy="143" r="7.5" fill={`url(#p${uid})`} stroke={c} strokeWidth="1.2" />
-          <text x="50" y="146.5" textAnchor="middle" fontFamily="IBM Plex Mono, monospace"
-            fontSize="8.5" fontWeight="600" fill={c}>5</text>
-        </g>
-      )}
-      {(rank === 1 || esFigura) && (
-        <text x="50" y="147" textAnchor="middle" fontFamily="IBM Plex Mono, monospace"
-          fontSize="7.5" fill={c} opacity=".75">
-          {rank === 1 ? "4" : rank === 12 ? "3" : rank === 11 ? "2" : "1"}
-        </text>
-      )}
+      {/* Índexs (§6.6). La xifra fa el 13% de l'alçada i el pal el 9%, apilats
+          a la mateixa cantonada: és tot el que es veu d'una carta en ventall.
+          Porten un coixí de paper al darrere perquè cap figura no els embruti. */}
+      <Index rank={rank} pal={pal} c={c} uid={uid} />
+      <g transform="rotate(180 50 75)"><Index rank={rank} pal={pal} c={c} uid={uid} /></g>
     </svg>
   );
 }
 
-export function Dors({ w = 74 }: { w?: number }) {
-  const h = Math.round(w * 1.56);
+function Index({ rank, pal, c, uid }: { rank: number; pal: Pal; c: string; uid: string }) {
   return (
-    <svg className="carta" width={w} height={h} viewBox="0 0 100 156" aria-hidden="true">
+    <g>
+      <rect x="5" y="5" width="22" height="38" rx="4" fill={`url(#p${uid})`} opacity=".92" />
+      <text x="16" y="25" textAnchor="middle" fontFamily="Bitter, Georgia, serif"
+        fontSize="19.5" fontWeight="700" fill={c}>{rank}</text>
+      <g transform="translate(9.2,28) scale(0.135)"><Emblema pal={pal} /></g>
+    </g>
+  );
+}
+
+export function Dors({ w = 74 }: { w?: number }) {
+  const h = Math.round(w * 1.5);
+  return (
+    <svg className="carta" width={w} height={h} viewBox="0 0 100 150" aria-hidden="true">
       <defs>
         <pattern id="teixit" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <rect width="10" height="10" fill="#6B4632" />
-          <path d="M0 5 h10 M5 0 v10" stroke="#8A6248" strokeWidth="1.1" />
-          <circle cx="5" cy="5" r="1.4" fill="#A47A5C" />
+          <rect width="10" height="10" fill="#7A2E2A" />
+          <path d="M0 5 h10 M5 0 v10" stroke="#96413C" strokeWidth="1.1" />
+          <circle cx="5" cy="5" r="1.4" fill="#B25B54" />
         </pattern>
       </defs>
-      <rect width="100" height="156" rx="8" fill="#5A3A28" />
-      <rect x="5" y="5" width="90" height="146" rx="5" fill="url(#teixit)" />
-      <rect x="5" y="5" width="90" height="146" rx="5" fill="none" stroke="#A47A5C" strokeWidth="1.4" />
-      <rect x="9" y="9" width="82" height="138" rx="3" fill="none" stroke="#C49A78" strokeWidth="0.7" opacity=".7" />
-      <circle cx="50" cy="78" r="21" fill="#5A3A28" stroke="#C49A78" strokeWidth="1.6" />
-      <circle cx="50" cy="78" r="17" fill="none" stroke="#A47A5C" strokeWidth="0.8" />
-      <text x="50" y="85" textAnchor="middle" fontFamily="Bitter, Georgia, serif"
-        fontSize="20" fontWeight="700" fill="#E8C9A0">M</text>
+      {/* §6.2: camp vermell terrós, doble filet crema, simètric a 180° */}
+      <rect width="100" height="150" rx="8" fill="#7A2E2A" />
+      <rect x="5" y="5" width="90" height="140" rx="5" fill="url(#teixit)" />
+      <rect x="5" y="5" width="90" height="140" rx="5" fill="none" stroke="#E8DCC0" strokeWidth="1.6" />
+      <rect x="9" y="9" width="82" height="132" rx="3" fill="none" stroke="#E8DCC0" strokeWidth="0.7" opacity=".7" />
+      <ellipse cx="50" cy="75" rx="19" ry="23" fill="#7A2E2A" stroke="#E8DCC0" strokeWidth="1.6" />
+      <ellipse cx="50" cy="75" rx="15" ry="19" fill="none" stroke="#E8DCC0" strokeWidth="0.8" opacity=".6" />
+      <text x="50" y="82" textAnchor="middle" fontFamily="Bitter, Georgia, serif"
+        fontSize="20" fontWeight="700" fill="#E8DCC0">M</text>
     </svg>
   );
 }
