@@ -44,10 +44,18 @@ function Avatar({ inicial, mida = 56 }: { inicial: string; mida?: number }) {
 
 /* ───────────────────────────────── inici ──────────────────────────────── */
 
+const TEMES = [
+  { id: "clar" as const, nom: "Clar" },
+  { id: "fosc" as const, nom: "Fosc" },
+  { id: "contrast" as const, nom: "Contrast" },
+];
+
 export function Inici({
-  perfil, onJuga, onPerfil, onEstadistiques, onRegles, onAjustos,
+  perfil, ajustos, onCanviaAjustos,
+  onJuga, onPerfil, onEstadistiques, onRegles, onAjustos,
 }: {
   perfil: Perfil | null;
+  ajustos: Ajustos; onCanviaAjustos: (a: Ajustos) => void;
   onJuga: () => void; onPerfil: () => void; onEstadistiques: () => void;
   onRegles: () => void; onAjustos: () => void;
 }) {
@@ -80,8 +88,21 @@ export function Inici({
         <div className="menu">
           <button className="b-principal gros" onClick={onPerfil}>Comença</button>
           <button className="b-secundari" onClick={onRegles}>Regles del joc</button>
+          <button className="b-secundari" onClick={onAjustos}>Ajustos</button>
         </div>
       )}
+
+      {/* La llum es canvia des d'aquí: és el primer que es vol tocar i abans
+          calia haver creat el perfil per arribar als ajustos. */}
+      <div className="tria-llum">
+        <span>Llum</span>
+        <div className="tria">
+          {TEMES.map((t) => (
+            <button key={t.id} data-sel={ajustos.tema === t.id}
+              onClick={() => onCanviaAjustos({ ...ajustos, tema: t.id })}>{t.nom}</button>
+          ))}
+        </div>
+      </div>
 
       <p className="peu-nota">
         Es juga contra la màquina. El joc en línia amb altres persones arriba

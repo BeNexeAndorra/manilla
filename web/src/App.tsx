@@ -63,6 +63,8 @@ export default function App() {
       {vista === "inici" && (
         <Inici
           perfil={estat.perfil}
+          ajustos={estat.ajustos}
+          onCanviaAjustos={canviaAjustos}
           onJuga={() => setVista(estat.perfil ? "config" : "compte")}
           onPerfil={() => setVista("compte")}
           onEstadistiques={() => setVista("estadistiques")}

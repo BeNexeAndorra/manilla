@@ -778,3 +778,7 @@ body{
 .fitxa.baralla span{font-size:13px}
 .bloc .nota a{color:var(--accent-clar);text-underline-offset:2px}
 .bloc .nota b{color:var(--text-2);font-weight:600}
+
+/* tria de llum a la pantalla d'inici */
+.tria-llum{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:4px}
+.tria-llum > span{font-size:15px;font-weight:600;color:var(--text-3)}

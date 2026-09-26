@@ -1,4 +1,9 @@
-/** La marca de Manilla: cercle de paper amb la silueta retallada. */
+/**
+ * La marca de Manilla: un cercle ple amb la silueta retallada.
+ *
+ * El cercle es pinta amb `--text`, no amb un crema fix: en mode clar el token
+ * és fosc i la marca surt en negatiu tota sola, sense cap variant a part.
+ */
 export default function Marca({ mida = 28 }: { mida?: number }) {
   const id = `marca-${mida}`;
   return (
@@ -13,7 +18,7 @@ export default function Marca({ mida = 28 }: { mida?: number }) {
         </g>
         <path d="M37.2 26.4c-2.6 1.3-6 1.3-8.6-.3.2 3.2 2.4 5.4 5 5.4 2.2 0 3.4-1.9 3.6-5.1Z" fill="black" />
       </mask>
-      <circle cx="24" cy="24" r="23.5" fill="#F5F1E8" mask={`url(#${id})`} />
+      <circle cx="24" cy="24" r="23.5" fill="var(--text)" mask={`url(#${id})`} />
     </svg>
   );
 }
