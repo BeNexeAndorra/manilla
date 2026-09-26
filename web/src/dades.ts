@@ -25,6 +25,10 @@ export type Ajustos = {
   so: boolean;
   /** «classica» és la baralla Naipes Libres; «propia», la il·lustrada per a Manilla. */
   baralla: "classica" | "propia";
+  /** Música de fons: encesa, quina peça i quant de volum (0 a 1). */
+  musica: boolean;
+  peca: "nocturn" | "escalfor" | "silencis";
+  volum: number;
 };
 
 export type Config = {
@@ -62,7 +66,8 @@ type Magatzem = {
 };
 
 export const AJUSTOS_INICIALS: Ajustos =
-  { tema: "fosc", gran: false, trama: false, so: true, baralla: "classica" };
+  { tema: "fosc", gran: false, trama: false, so: true, baralla: "classica",
+    musica: false, peca: "nocturn", volum: 0.25 };
 export const CONFIG_INICIAL: Config = { nivell: 1, objectiu: 101 };
 export const ESTADISTIQUES_INICIALS: Estadistiques = {
   partides: 0, guanyades: 0, mans: 0, mansGuanyades: 0,

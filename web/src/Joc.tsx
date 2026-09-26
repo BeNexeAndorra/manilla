@@ -236,6 +236,7 @@ export default function Joc({
   const [sel, setSel] = useState<string | null>(null);
   const [teclat, setTeclat] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [bases, setBases] = useState(false);
   const [avis, setAvis] = useState("");
   const [escala, setEscala] = useState(1);
   const [ample, setAmple] = useState(() =>
@@ -437,7 +438,8 @@ export default function Joc({
     v, ma, sel, teclat, trama, gran, classica: ajustos.baralla === "classica",
     emToca, jugant, cantant, trumfo, mult, avis,
     marcador, toca, mostra, canta, comenca, contra, seguent,
-    obreRegles: onRegles, obreMenu: () => setMenu(true), objectiu: config.objectiu,
+    obreRegles: onRegles, obreMenu: () => setMenu(true),
+    obreBases: () => setBases(true), objectiu: config.objectiu,
   };
 
   return (
@@ -447,6 +449,45 @@ export default function Joc({
             esqOberta={esqOberta} dreOberta={dreOberta}
             setEsqOberta={setEsqOberta} setDreOberta={setDreOberta} />
         : <Mobil {...J} escala={escala} />}
+
+      {bases && (
+        <div className="capa-modal">
+          <div className="rerefons" onClick={() => setBases(false)} />
+          <div className="full bases-full">
+            <div className="nansa" />
+            <div className="titol-full">
+              <h2>Bases de la mà</h2>
+              <span className="sub">
+                {v.tricksPlayed === 0
+                  ? "Encara no se n'ha tancat cap."
+                  : `${v.tricksPlayed} de 12 · la vora de llautó marca qui l'ha guanyada`}
+              </span>
+            </div>
+            <div className="llista-bases">
+              {[...v.tricks].reverse().map((b, i) => (
+                <div key={v.tricks.length - i} className="base">
+                  <div className="base-cap">
+                    <span>Base {v.tricks.length - i}</span>
+                    <span className="guanya" style={{ borderBottomColor: EQUIP[b.winner ?? 0] }}>
+                      {NOMS[b.winner ?? 0]}
+                    </span>
+                  </div>
+                  <div className="base-cartes">
+                    {b.plays.map((p) => (
+                      <MiniCarta key={p.seat} code={p.card}
+                        guanya={p.seat === b.winner}
+                        classica={ajustos.baralla === "classica"} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="botons">
+              <button className="b-principal" onClick={() => setBases(false)}>Torna a la taula</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {menu && (
         <div className="capa-modal">
@@ -462,6 +503,10 @@ export default function Joc({
             <div className="amples">
               <button className="opcio-ample" onClick={() => setMenu(false)}>
                 <span>Continua la partida</span>
+              </button>
+              <button className="opcio-ample" onClick={() => { setMenu(false); setBases(true); }}>
+                <span>Bases de la mà</span>
+                <span className="detall">{v.tricksPlayed} de 12</span>
               </button>
               <button className="opcio-ample" onClick={() => { setMenu(false); onRegles(); }}>
                 <span>Regles</span><span className="detall">jerarquia i obligacions</span>
@@ -487,7 +532,7 @@ type Joc = {
   trumfo: Pal | null; mult: number; avis: string; marcador: [number, number];
   toca: (c: string) => void; mostra: (t: string) => void;
   canta: (q: string) => void; comenca: () => void; contra: () => void; seguent: () => void;
-  obreRegles: () => void; obreMenu: () => void; objectiu: number;
+  obreRegles: () => void; obreMenu: () => void; obreBases: () => void; objectiu: number;
   escala: number;
 };
 
@@ -737,8 +782,12 @@ function BarraContracte({ J }: { J: Joc }) {
           {trumfo && <Simbol pal={trumfo} w={20} />}
           <span className="nom">{v.contract.trump ? capitala(v.contract.trump) : "Botifarra"}</span>
           <span className="mult">×{mult}</span>
+          <button className="bases-fetes" onClick={J.obreBases}
+            aria-label={`${v.tricksPlayed} bases jugades de 12. Obre l'historial`}>
+            <b>{v.tricksPlayed}</b><span>/12</span>
+          </button>
           <span className="qui">
-            mà {ma} · {v.contract.declarer === JO ? "cantaves tu" : `cantava ${NOMS[v.contract.declarer]}`}
+            {v.contract.declarer === JO ? "cantaves tu" : `cantava ${NOMS[v.contract.declarer]}`}
           </span>
         </>
       ) : (
@@ -755,6 +804,15 @@ function BarraContracte({ J }: { J: Joc }) {
 
 function Fulls({ J, controTop }: { J: Joc; controTop: number }) {
   const { v, ma, mult, emToca, cantant } = J;
+
+  /* Si en tancar aquesta mà algú arriba a l'objectiu, el botó no pot dir
+     «Una altra»: no n'hi haurà cap altra, i el que ve és el resultat. */
+  const acabaLaPartida = (() => {
+    if (!v.result || v.result.winner === null) return false;
+    const m: [number, number] = [...J.marcador];
+    m[v.result.winner] += v.result.scored;
+    return m[0] >= J.objectiu || m[1] >= J.objectiu;
+  })();
   return (
     <>
       {v.phase === "doubling" && (
@@ -830,6 +888,7 @@ function Fulls({ J, controTop }: { J: Joc; controTop: number }) {
                 : v.result.winner === 1 ? "La guanyen ells" : "Empat a 36"}</h2>
               <span className="sub">
                 Mà {ma} · {v.contract?.trump ? capitala(v.contract.trump) : "Botifarra"} ×{v.result.multiplier}
+                {acabaLaPartida && " · última mà de la partida"}
               </span>
             </div>
             <div className="desglos">
@@ -845,7 +904,9 @@ function Fulls({ J, controTop }: { J: Joc; controTop: number }) {
               </div>
             </div>
             <div className="botons">
-              <button className="b-principal" onClick={J.seguent}>Una altra</button>
+              <button className="b-principal" onClick={J.seguent}>
+                {acabaLaPartida ? "Mira el resultat" : "Una altra"}
+              </button>
               <button className="b-secundari" onClick={() => J.obreRegles()}>Per què?</button>
             </div>
           </div>

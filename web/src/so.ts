@@ -17,6 +17,8 @@ let ctx: AudioContext | null = null;
 let mestre: GainNode | null = null;
 let actiu = true;
 let soroll: AudioBuffer | null = null;
+let victoria: AudioBuffer | null = null;
+let carregant: Promise<AudioBuffer | null> | null = null;
 
 function arrenca(): AudioContext | null {
   if (typeof window === "undefined") return null;
@@ -229,10 +231,40 @@ export const so = {
   },
 
   /**
-   * Victòria de partida: redoblament i metalls, a l'estil d'arena.
+   * Victòria de partida. Sona la peça que ha portat el Marcel, retallada als
+   * dos primers segons amb esvaïment. Si el fitxer no arriba, hi ha la
+   * fanfàrria sintetitzada de sota, que no depèn de res.
+   *
    * Només aquí; el final de mà continua sent l'acord curt de la §11.
    */
   triomf() {
+    const c = arrenca();
+    if (!c || !mestre || !actiu) return;
+    const sortida = mestre;
+
+    const toca = (b: AudioBuffer) => {
+      const f = c.createBufferSource();
+      f.buffer = b;
+      const g = c.createGain();
+      g.gain.value = 0.9;
+      f.connect(g).connect(sortida);
+      f.start();
+    };
+
+    if (victoria) { toca(victoria); return; }
+
+    carregant ??= fetch("/so/victoria.m4a")
+      .then((r) => (r.ok ? r.arrayBuffer() : Promise.reject(new Error("no hi és"))))
+      .then((b) => c.decodeAudioData(b))
+      .catch(() => null);
+
+    void carregant.then((b) => {
+      if (b) { victoria = b; toca(b); } else so.fanfarria();
+    });
+  },
+
+  /** La fanfàrria sintetitzada, de recanvi. */
+  fanfarria() {
     const c = arrenca();
     if (!c || !mestre || !actiu) return;
     const t0 = c.currentTime + 0.05;

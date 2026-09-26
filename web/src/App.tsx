@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Joc, { type FiPartida } from "./Joc";
 import Regles from "./Regles";
 import { so } from "./so";
+import { musica } from "./musica";
 import {
   Inici, Compte, Configuracio, Resultat, Estadistiques, PantallaAjustos,
 } from "./Pantalles";
@@ -26,12 +27,21 @@ export default function App() {
 
   useEffect(() => { so.activa(estat.ajustos.so); }, [estat.ajustos.so]);
 
+  useEffect(() => {
+    musica.configura({
+      musica: estat.ajustos.musica,
+      peca: estat.ajustos.peca,
+      volum: estat.ajustos.volum,
+    });
+  }, [estat.ajustos.musica, estat.ajustos.peca, estat.ajustos.volum]);
+
   /* Un clic per a tots els botons, en un sol lloc: si s'hagués de posar a
      cada `onClick` se n'oblidaria algun. Les cartes no hi entren perquè no
      són <button> i ja tenen el seu so. */
   useEffect(() => {
     const prem = (e: PointerEvent) => {
       const dest = e.target as HTMLElement | null;
+      musica.desperta();   // el navegador no deixa sonar res fins al primer toc
       if (dest?.closest?.("button")) so.clic();
     };
     document.addEventListener("pointerdown", prem, true);

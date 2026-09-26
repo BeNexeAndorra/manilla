@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import Marca from "./Marca";
 import { so } from "./so";
+import { musica, PECES } from "./musica";
 import { Carta, CartaClassica, Simbol } from "./Carta";
 import {
   dades, type Ajustos, type Config, type Estadistiques, type Perfil, type ResumPartida,
@@ -222,7 +223,9 @@ export function Resultat({
 }: { resum: ResumPartida; onAltra: () => void; onMenu: () => void }) {
   // Només en guanyar la partida. En perdre no sona res: no s'hi fa broma.
   useEffect(() => {
-    if (resum.guanyada) so.triomf();
+    if (!resum.guanyada) return;
+    so.triomf();
+    musica.esmorteeix(2600);   // que la música no tapi la celebració
   }, [resum.guanyada, resum.id]);
 
   return (
@@ -353,6 +356,40 @@ export function PantallaAjustos({
           <span className="interruptor" data-on={ajustos.trama}><i /></span>
         </button>
       </div>
+
+      <section className="bloc">
+        <h2>Música de fons</h2>
+        <button className="ajust" onClick={() => set({ musica: !ajustos.musica })}
+          aria-pressed={ajustos.musica}>
+          <span className="et">
+            <b>Posa música</b>
+            <span>sempre de fons, mai per sobre del joc</span>
+          </span>
+          <span className="interruptor" data-on={ajustos.musica}><i /></span>
+        </button>
+
+        {ajustos.musica && (
+          <>
+            <div className="tria-fitxes tres">
+              {PECES.map((p) => (
+                <button key={p.id} className="fitxa" data-sel={ajustos.peca === p.id}
+                  onClick={() => set({ peca: p.id })}>
+                  <b>{p.nom}</b>
+                  <span>{p.detall}</span>
+                </button>
+              ))}
+            </div>
+            <label className="control-volum">
+              <span>Volum</span>
+              <input type="range" min={0} max={100} step={5}
+                value={Math.round(ajustos.volum * 100)}
+                onChange={(e) => set({ volum: Number(e.target.value) / 100 })}
+                aria-label="Volum de la música" />
+              <b>{Math.round(ajustos.volum * 100)}%</b>
+            </label>
+          </>
+        )}
+      </section>
 
       <section className="bloc">
         <h2>La baralla</h2>
