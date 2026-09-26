@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import Marca from "./Marca";
-import Escena from "./Escena";
 import { so } from "./so";
 import { musica, PECES } from "./musica";
 import { Carta, CartaClassica, Simbol } from "./Carta";
@@ -18,7 +17,7 @@ function Pantalla({
 }) {
   return (
     <div className="pantalla">
-      {fons && <Escena className="escena-portada" />}
+      {fons && <div className="escena-portada" aria-hidden="true" />}
       <div className={`columna-central${ampla ? " ampla" : ""}`}>
         {(titol || enrere) && (
           <div className="cap-pantalla">

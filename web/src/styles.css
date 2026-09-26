@@ -923,12 +923,35 @@ body{
    Va al darrere de tot i molt apagada: ha de notar-se sense mirar-la.
    `--esc-buit` és el color amb què es «talla» la silueta, i per això ha de
    ser el mateix que el fons de la sala. */
+/* ── L'escena de la portada ─────────────────────────────────────────────
+   El dibuix no va com a imatge sinó com a MÀSCARA d'un rectangle pintat amb
+   `--text`. Així el traç agafa el color del tema i el fons blanc del JPG
+   original desapareix del tot, amb l'antialiàsing intacte.
+
+   Hi ha dues capes de màscara: el dibuix i un degradat que l'esvaeix cap
+   amunt i pels costats. `intersect` fa que només quedi el que hi ha a les
+   dues, que és el que evita que el dibuix talli en sec.            */
 .escena-portada{
-  position:absolute; left:50%; bottom:0; transform:translateX(-50%);
-  width:min(140%, 1000px); height:min(74%, 600px);
+  position:absolute; left:50%; bottom:-2%; transform:translateX(-50%);
+  width:min(168%, 1240px); aspect-ratio:880 / 662;
   pointer-events:none; z-index:0;
-  color:var(--text); opacity:.055;
+  background-color:var(--text);
+  opacity:.14;
+
+  -webkit-mask-image:url(/escena.png),
+    radial-gradient(ellipse 88% 96% at 50% 76%, #000 30%, rgba(0,0,0,.55) 64%, transparent 100%);
+  mask-image:url(/escena.png),
+    radial-gradient(ellipse 88% 96% at 50% 76%, #000 30%, rgba(0,0,0,.55) 64%, transparent 100%);
+  -webkit-mask-size:contain, cover;
+  mask-size:contain, cover;
+  -webkit-mask-position:bottom center, center;
+  mask-position:bottom center, center;
+  -webkit-mask-repeat:no-repeat, no-repeat;
+  mask-repeat:no-repeat, no-repeat;
+  -webkit-mask-composite:source-in;
+  mask-composite:intersect;
 }
-[data-tema="clar"] .escena-portada{opacity:.085}
+[data-tema="clar"] .escena-portada{opacity:.17}
+/* En alt contrast fa nosa: la pantalla ha de ser plana i llegible (§4.6). */
 [data-tema="contrast"] .escena-portada{display:none}
 .pantalla > .columna-central{position:relative;z-index:1}

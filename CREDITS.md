@@ -42,6 +42,16 @@ La resta de sons —clic, carta, repartiment, basa, cant, contro i acord de
 final de mà— són **sintetitzats amb Web Audio** a `web/src/so.ts`: no hi ha
 cap fitxer ni cap llicència de tercers.
 
+## Il·lustració de la portada
+
+`web/public/escena.png` surt de `manilla-game-Home.jpg`, que va portar el
+Marcel. Tractament: retall del marge blanc, conversió de la foscor del traç
+a canal alfa, i reducció a 880 px en gris+alfa. No es mostra com a imatge
+sinó com a **màscara**, o sigui que el traç agafa el color del tema.
+
+> Com amb la música, **falta deixar constància d'amb què es va generar** si
+> Manilla ha de ser de pagament.
+
 ## Tipografies
 
 Inter, IBM Plex Mono i Bitter, servides per Google Fonts, totes amb
